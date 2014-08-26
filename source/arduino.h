@@ -21,11 +21,13 @@
 #define _USE_MATH_DEFINES
 #include <math.h>
 
+#include "ArduinoCommon.h"
 #include "ArduinoError.h"
 #include "WindowsRandom.h"
 #include "WindowsTime.h"
 #include "WString.h"
-#include "embprpusr.h"
+#include "PinSupport.h"
+//#include "embprpusr.h"
 #include "galileo.h"
 #include "binary.h"
 #include "wire.h"
@@ -55,12 +57,12 @@
 #define IO19_A5_MUX GPORT0_BIT4		// Encoded port and bit for IO19/A5 MUX
 #define IO_A_MUX_TO_IO 1			// IOnn/An MUX bit state for IO through MUX
 
-#define A0 14						// Analog pin 0 is digital "pin 14"
-#define A1 15						// Analog pin 1 is digital "pin 15"
-#define A2 16						// Analog pin 2 is digital "pin 16"
-#define A3 17						// Analog pin 3 is digital "pin 17"
-#define A4 18						// Analog pin 4 is digital "pin 18"
-#define A5 19						// Analog pin 5 is digital "pin 19"
+//#define A0 14						// Analog pin 0 is digital "pin 14"
+//#define A1 15						// Analog pin 1 is digital "pin 15"
+//#define A2 16						// Analog pin 2 is digital "pin 16"
+//#define A3 17						// Analog pin 3 is digital "pin 17"
+//#define A4 18						// Analog pin 4 is digital "pin 18"
+//#define A5 19						// Analog pin 5 is digital "pin 19"
 
 // Closest Galileo value to the 490hz used by most UNO PWMs, while still 
 // allowing full 8-bit PWM pulse width resolution, is 367 hz.
@@ -69,15 +71,6 @@
 //
 // Definition of Constants as defined on http://wiring.org.co/reference/index.html and http://arduino.cc/en/Reference/Constants
 //
-#define LOW             0x00
-#define HIGH            0x01
-
-#define INPUT           0x00
-#define OUTPUT          0x01
-#define INPUT_PULLUP    0x02
-
-#define LSBFIRST        0x00
-#define MSBFIRST        0x01
 
 #define CHANGE          0x01
 #define FALLING         0x02
@@ -270,7 +263,7 @@ typedef struct {
 } PORT_BIT, *PPORT_BIT;
 #define NO_PORT 0x0F
 #define NO_PWM 0x0F
-const PORT_BIT _ArduinoToPortBitMap[NUM_ARDUINO_PINS] =
+__declspec (selectany) PORT_BIT _ArduinoToPortBitMap[NUM_ARDUINO_PINS] =
 {  // Format: port, port-bit, PWM-number, MUX-port, MUX-port-bit, SPI-pin, I2C-pin, analog-pin
     { 4, 6, NO_PWM, 3, 4, false, false, false },			// 0
     { 4, 7, NO_PWM, 3, 5, false, false, false },			// 1
@@ -533,7 +526,7 @@ __declspec (noinline) inline void _InitializePin(int pin)
     // Restore the state of the I2C MUX if it was changed by the Wire.begin() call.
     if (!I2cWasEnabled)
     {
-        GpioWrite(I2C_MUX, I2C_MUX_DISABLE);
+        //GpioWrite(I2C_MUX, I2C_MUX_DISABLE);
         Wire.setI2cHasBeenEnabled(false);
     }
 
@@ -655,11 +648,11 @@ inline void digitalWrite(unsigned int pin, unsigned int state)
 
     if (!_pinData[pin].stateIsKnown || (_pinData[pin].state != state))
     {
-        HRESULT hr = GpioWrite(_ArduinoToGalileoPinMap[pin], (ULONG)state);
-        if (FAILED(hr))
-        {
-            ThrowError("GpioWrite() failed. pin=%d, state=%d", pin, state);
-        }
+        //HRESULT hr = GpioWrite(_ArduinoToGalileoPinMap[pin], (ULONG)state);
+        //if (FAILED(hr))
+        //{
+        //    ThrowError("GpioWrite() failed. pin=%d, state=%d", pin, state);
+        //}
         _pinData[pin].state = state;
         _pinData[pin].stateIsKnown = TRUE;
     }
@@ -686,11 +679,11 @@ inline int digitalRead(int pin)
     _RevertPinToDigital(pin);
     
     LONG ret;
-    HRESULT hr = GpioRead(_ArduinoToGalileoPinMap[pin], &ret);
-    if ( FAILED(hr) )
-    {
-        ThrowError("GpioRead() failed to read pin %d: 0x%x", pin, hr);
-    }
+    //HRESULT hr = GpioRead(_ArduinoToGalileoPinMap[pin], &ret);
+    //if ( FAILED(hr) )
+    //{
+    //    ThrowError("GpioRead() failed to read pin %d: 0x%x", pin, hr);
+    //}
 
     return (int)ret;
 }
@@ -712,17 +705,17 @@ inline void pinMode(unsigned int pin, unsigned int mode)
 
 	if (_pinData[pin].pwmIsEnabled)
 	{
-		PwmStop(_PwmPinMap[pin]);
+		//PwmStop(_PwmPinMap[pin]);
 		_pinData[pin].pwmIsEnabled = FALSE;
 	}
 
     if (_pinData[pin].currentMode != mode)
     {
-        HRESULT hr = GpioSetDir(_ArduinoToGalileoPinMap[pin], mode);
-        if (FAILED(hr))
-        {
-            ThrowError("GpioSetDir() failed. pin = %d, mode = %d", pin, mode);
-        }
+        //HRESULT hr = GpioSetDir(_ArduinoToGalileoPinMap[pin], mode);
+        //if (FAILED(hr))
+        //{
+        //    ThrowError("GpioSetDir() failed. pin = %d, mode = %d", pin, mode);
+        //}
         _pinData[pin].modeSet = mode;
         _pinData[pin].currentMode = mode;
     }
@@ -741,11 +734,11 @@ inline void _SetImplicitPinMode(unsigned int pin, unsigned int mode)
 
     if (_pinData[pin].currentMode != mode)
     {
-        HRESULT hr = GpioSetDir(_ArduinoToGalileoPinMap[pin], mode);
-        if (FAILED(hr))
-        {
-            ThrowError("GpioSetDir() failed. pin = %d, mode = %d", pin, mode);
-        }
+        //HRESULT hr = GpioSetDir(_ArduinoToGalileoPinMap[pin], mode);
+        //if (FAILED(hr))
+        //{
+        //    ThrowError("GpioSetDir() failed. pin = %d, mode = %d", pin, mode);
+        //}
         _pinData[pin].currentMode = mode;
     }
 }
@@ -788,17 +781,17 @@ inline bool _SetImplicitPinFunction(ULONG pin, ULONG function)
         {
             _ValidatePinOkToChange(pin);
 
-            HRESULT hr = GpioSetDir(LOWORD(mux), 1);
-            if (FAILED(hr))
-            {
-                ThrowError("GpioSetDir() : Unexpected error");
-            }
+            //HRESULT hr = GpioSetDir(LOWORD(mux), 1);
+            //if (FAILED(hr))
+            //{
+            //    ThrowError("GpioSetDir() : Unexpected error");
+            //}
 
-            hr = GpioWrite(LOWORD(mux), val);
-            if (FAILED(hr))
-            {
-                ThrowError("GpioWrite() : Unexpected error");
-            }
+            //hr = GpioWrite(LOWORD(mux), val);
+            //if (FAILED(hr))
+            //{
+            //    ThrowError("GpioWrite() : Unexpected error");
+            //}
             _pinData[pin].currentMux = function;
         }
         return true;
@@ -860,7 +853,7 @@ inline void _RevertPinToDigital(int pin)
 
     if (_pinData[pin].pinInUseI2c)
     {
-        GpioWrite(I2C_MUX, I2C_MUX_DISABLE);
+        //GpioWrite(I2C_MUX, I2C_MUX_DISABLE);
         Wire.setI2cHasBeenEnabled(false);
         _pinData[pin].pinInUseI2c = FALSE;
     }
@@ -907,7 +900,7 @@ inline void analogWrite(int pin, int value)
         _pinData[pin].stateIsKnown = FALSE;
 
         // Start PWM on the pin.
-        hr = PwmStart(_PwmPinMap[pin], PWM_HZ, dutyCycle);
+        //hr = PwmStart(_PwmPinMap[pin], PWM_HZ, dutyCycle);
         if (FAILED(hr))
         {
             ThrowError("PwmStart() failed. pin=%d, freq=100hz, dutyCycle=%d",
@@ -920,7 +913,7 @@ inline void analogWrite(int pin, int value)
     // If PWM operation is enabled on this pin, and duty cycle is being changed:
     else if (_pinData[pin].pwmDutyCycle != dutyCycleIn)
     {
-        hr = PwmSetDutyCycle(_PwmPinMap[pin], dutyCycle);
+        //hr = PwmSetDutyCycle(_PwmPinMap[pin], dutyCycle);
         if (FAILED(hr))
         {
             ThrowError("PwmSetDutyCycle() failed. pin=%d, dutyCycle=%d",
@@ -934,29 +927,29 @@ class ArduinoStatic
 {
 
 public:
-    ArduinoStatic() :
-        adc(nullptr)
+    ArduinoStatic() //:
+        //adc(nullptr)
     { }
 
     ~ArduinoStatic()
     {
-        if ( this->adc != nullptr )
-        {
-            AdcFree(this->adc);
-            this->adc = nullptr;
-        }
+        //if ( this->adc != nullptr )
+        //{
+        //    //AdcFree(this->adc);
+        //    this->adc = nullptr;
+        //}
     }
 
     void begin()
     {
-        if ( this->adc == nullptr )
-        {
-            HRESULT hr = AdcCreateInstance(ADC_CONTROLLER_INDEX, &this->adc);
-            if ( FAILED(hr) )
-            {
-                ThrowError("Failed to initialized Analog");
-            }
-        }
+        //if ( this->adc == nullptr )
+        //{
+        //    HRESULT hr = AdcCreateInstance(ADC_CONTROLLER_INDEX, &this->adc);
+        //    if ( FAILED(hr) )
+        //    {
+        //        ThrowError("Failed to initialized Analog");
+        //    }
+        //}
     }
 
     //
@@ -980,22 +973,23 @@ public:
                 pinL, NUM_ANALOG_PINS);
         }
 
-        if ( this->adc == nullptr )
-        {
-            ThrowError("Arduino not initialized");
-        }
+        //if ( this->adc == nullptr )
+        //{
+        //    ThrowError("Arduino not initialized");
+        //}
 
-        LONG result = AdcSampleChannel(this->adc, (ULONG) pinL);
-        if ( result < 0 )
-        {
-            ThrowError("AdcSampleChannel failed");
-        }
+        //LONG result = AdcSampleChannel(this->adc, (ULONG) pinL);
+        //if ( result < 0 )
+        //{
+        //    ThrowError("AdcSampleChannel failed");
+        //}
 
-        return result;
+        //return result;
+        return 0;
     }
 
 private:
-    ADC *adc;
+    //ADC *adc;
 };
 
 __declspec (selectany) ArduinoStatic _ArduinoStatic;
@@ -1005,8 +999,8 @@ inline void ArduinoInit()
     _ArduinoStatic.begin();
 
     // ensure level shifter enabled
-    GpioSetDir(QRK_LEGACY_RESUME_SUS2, OUTPUT);
-    GpioWrite(QRK_LEGACY_RESUME_SUS2, HIGH);
+    //GpioSetDir(QRK_LEGACY_RESUME_SUS2, OUTPUT);
+    //GpioWrite(QRK_LEGACY_RESUME_SUS2, HIGH);
 }
 
 inline int analogRead(int channel)
